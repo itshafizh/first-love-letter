@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Surat Cinta</title>
+  <style>
+    :root{
+      --bg:#ffd6e8;
+      --accent:#ff5f91;
+      --text:#4a2c2a;
+      --muted:#7a4a49;
+      --card:#ffe6ef;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      min-height:100vh;
+      background:linear-gradient(180deg,#ffd6e8 0%,#ffc1d6 100%);
+      font-family:'Poppins',sans-serif;
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      overflow:hidden;
+    }
+    .card{
+      background-color:var(--card);
+      width:100%;
+      max-width:500px;
+      border-radius:20px;
+      padding:24px;
+      box-shadow:0 8px 24px rgba(255,105,150,0.3);
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      z-index:2;
+    }
+    h1{
+      font-size:28px;
+      color:var(--accent);
+    }
+    p{color:var(--muted);margin-top:8px;font-size:14px;}
+    input[type='text']{
+      margin-top:16px;
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.5);
+      outline:none;
+      font-size:16px;
+      text-align:center;
+      color:var(--text);
+      background:white;
+    }
+    button{
+      margin-top:16px;
+      background:var(--accent);
+      border:none;
+      color:white;
+      padding:12px 24px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:16px;
+      cursor:pointer;
+      transition:background .3s;
+    }
+    button:hover{background:#ff79a9;}
+
+    .heart{
+      position:fixed;
+      color:white;
+      font-size:24px;
+      opacity:0.8;
+      animation:floatUp 4s linear forwards;
+      z-index:1;
+      pointer-events:none;
+    }
+
+    @keyframes floatUp{
+      0%{transform:translateY(0) scale(1);opacity:0.9;}
+      100%{transform:translateY(-120vh) scale(0.8);opacity:0;}
+    }
+
+    .letter{
+      margin-top:24px;
+      display:none;
+      background:white;
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 4px 10px rgba(255,105,150,0.2);
+      color:var(--text);
+    }
+    .letter.visible{display:block;}
+    .letter .to{font-weight:700;color:var(--accent);margin-bottom:8px;}
+    .editable{
+      min-height:120px;
+      padding:10px;
+      border:1px dashed #ff9db9;
+      border-radius:8px;
+      outline:none;
+      background:rgba(255,240,245,0.6);
+    }
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:center;
+      margin-top:12px;
+    }
+    .controls button{flex:1;min-width:100px;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="preview">Dear —</h1>
+    <p>Tulis nama pasanganmu lalu tekan "Lanjut" untuk membuka surat cintamu 💖</p>
+    <input id="nameInput" type="text" placeholder="Nama pasanganmu" />
+    <button id="nextBtn">Lanjut</button>
+
+    <div class="letter" id="letter">
+      <div class="to" id="letterTo">Untuk: Nama</div>
+      <div class="editable" id="editable" contenteditable="true">Tulis surat cintamu di sini 💌</div>
+      <div class="controls">
+        <button id="playBtn">Putar Musik</button>
+        <button id="stopBtn">Stop</button>
+      </div>
+    </div>
+
+    <audio id="audio" src="musik.mp3"></audio>
+  </div>
+
+  <script>
+    /*
+      EDIT DI SINI (kode):
+      Untuk mengubah isi surat langsung di koding, edit nilai DEFAULT_LETTER di bawah.
+      Contoh: ganti teks di antara backticks (`...`) sesuai dengan isi suratmu.
+      Setelah diedit dan file disimpan, saat halaman dibuka, teks tersebut akan langsung muncul di area surat.
+    */
+    const DEFAULT_LETTER = `Hai Raisya ,\n\nAku cuma mau ngungkapin sesuatu ke kamu, aku tau kitaa sama sama sakit, but kita bisaa ya belajar bareng buat ga nyakitin siapa" lagi, kitaa di sini juga bisa saling menguatkan satu sama lain yaa.\ncepat sembuh yaa wanita imut dan menggemaskan,\n\nDengan cinta,\n[Namamu]`;
+
+    const nameInput=document.getElementById('nameInput');
+    const nextBtn=document.getElementById('nextBtn');
+    const preview=document.getElementById('preview');
+    const letter=document.getElementById('letter');
+    const letterTo=document.getElementById('letterTo');
+    const editable=document.getElementById('editable');
+    const audio=document.getElementById('audio');
+
+    // Muat default letter dari kode (soalnya user minta edit lewat koding langsung)
+    function loadDefaultLetter(){
+      // convert newlines menjadi <br> untuk tampil di contenteditable
+      // perbaikan: gunakan regex yang benar untuk \n
+      editable.innerHTML = DEFAULT_LETTER.replace(/\n/g, '<br>');
+    }
+
+    function updateName(){
+      const name=nameInput.value.trim()||'—';
+      preview.textContent=`Dear ${name}`;
+      letterTo.textContent=`Untuk: ${name}`;
+    }
+
+    nameInput.addEventListener('input',updateName);
+
+    // Jika ada teks tersimpan di localStorage, utamakan itu; bila tidak, muat default dari kode
+    const STORAGE_KEY='surat_cinta_text';
+    const saved=localStorage.getItem(STORAGE_KEY);
+    if(saved) editable.innerHTML=saved; else loadDefaultLetter();
+
+    function createHearts(){
+      for(let i=0;i<80;i++){
+        const heart=document.createElement('div');
+        heart.classList.add('heart');
+        heart.textContent='❤';
+        heart.style.left=Math.random()*100+'vw';
+        heart.style.fontSize=(Math.random()*20+10)+'px';
+        heart.style.animationDuration=(Math.random()*3+2)+'s';
+        document.body.appendChild(heart);
+        setTimeout(()=>heart.remove(),4000);
+      }
+    }
+
+    nextBtn.addEventListener('click',()=>{
+      updateName();
+      createHearts();
+      audio.currentTime=0;
+      audio.play().catch(()=>{});
+      letter.classList.remove('visible');
+      setTimeout(()=>{
+        letter.classList.add('visible');
+        editable.focus();
+      },4000);
+    });
+
+    document.getElementById('playBtn').addEventListener('click',()=>audio.play());
+    document.getElementById('stopBtn').addEventListener('click',()=>{audio.pause();audio.currentTime=0;});
+
+    // Simpan isi surat saat user mengetik; ini tidak mencegah kamu mengubahnya lewat kode.
+    editable.addEventListener('input',()=>localStorage.setItem(STORAGE_KEY,editable.innerHTML));
+  </script>
+</body>
+</html>
